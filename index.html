@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>芭比AI穿搭生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background: #fff0f7;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 30px;
+        }
+        /* 左侧输入面板 */
+        .panel-left {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(230, 120, 180, 0.2);
+        }
+        h1 {
+            color: #e64998;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .form-item {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            color: #662244;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        textarea, select {
+            width: 100%;
+            border: 1px solid #f2c8e0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        textarea:focus, select:focus {
+            border-color: #e64998;
+            box-shadow: 0 0 0 3px rgba(230, 73, 152, 0.15);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        #genBtn {
+            background: #e64998;
+            color: white;
+        }
+        #genBtn:hover {
+            background: #d03884;
+        }
+        #resetBtn {
+            background: #f8e0ef;
+            color: #c03078;
+        }
+        #resetBtn:hover {
+            background: #f4cde2;
+        }
+        /* 生成服饰库 */
+        .cloth-library {
+            margin-top: 25px;
+        }
+        .cloth-library h3 {
+            color: #993366;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .cloth-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .cloth-item {
+            width: 70px;
+            height: 70px;
+            background: #fcf0f7;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #773355;
+            cursor: pointer;
+            border: 1px solid #f2d0e4;
+        }
+        .cloth-item:hover {
+            background: #f8d7eb;
+        }
+        /* 右侧芭比预览区 */
+        .panel-right {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .barbie-wrap {
+            width: 420px;
+            height: 600px;
+            position: relative;
+        }
+        /* 圆形芭比基底 */
+        .barbie-base {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: #ffdfd9;
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            overflow: visible;
+        }
+        /* 服饰层级（覆盖在芭比身上） */
+        .cloth-layer {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .accessory-layer {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .tip {
+            margin-top: 20px;
+            color: #aa5577;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧描述生成面板 -->
+        <div class="panel-left">
+            <h1>芭比AI穿搭生成器</h1>
+            <div class="form-item">
+                <label>描述你的服装/配饰</label>
+                <textarea id="descInput" placeholder="例如：粉色公主蓬蓬连衣裙、珍珠项链、白色高跟凉鞋、复古贝雷帽、链条腋下包"></textarea>
+            </div>
+            <div class="form-item">
+                <label>物品类型</label>
+                <select id="typeSelect">
+                    <option value="dress">连衣裙</option>
+                    <option value="top">上衣</option>
+                    <option value="pants">下装</option>
+                    <option value="hat">帽子</option>
+                    <option value="jewelry">首饰</option>
+                    <option value="bag">包包</option>
+                    <option value="shoe">鞋子</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button id="genBtn">生成穿搭单品</button>
+                <button id="resetBtn">清空全部搭配</button>
+            </div>
+            <!-- 生成单品展示库 -->
+            <div class="cloth-library">
+                <h3>已生成单品（点击穿戴）</h3>
+                <div class="cloth-list" id="clothBox"></div>
+            </div>
+        </div>
+
+        <!-- 右侧芭比预览 -->
+        <div class="panel-right">
+            <div class="barbie-wrap">
+                <!-- 圆形芭比本体 -->
+                <div class="barbie-base"></div>
+                <!-- 衣服层 -->
+                <div class="cloth-layer" id="clothLayer"></div>
+                <!-- 配饰层 -->
+                <div class="accessory-layer" id="accLayer"></div>
+            </div>
+            <p class="tip">左侧输入描述生成单品，点击单品即可穿在芭比身上</p>
+        </div>
+    </div>
+
+    <script>
+        // 全局存储单品列表
+        let clothList = [];
+        const clothBox = document.getElementById('clothBox');
+        const descInput = document.getElementById('descInput');
+        const typeSelect = document.getElementById('typeSelect');
+        const genBtn = document.getElementById('genBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const clothLayer = document.getElementById('clothLayer');
+        const accLayer = document.getElementById('accLayer');
+
+        // 模拟AI生成服饰配色与样式（简易渲染）
+        function generateClothStyle(desc, type) {
+            // 随机配色池
+            const colorPool = [
+                '#ff7eb9', '#ffb6d2', '#e888c2', '#ffd0e6',
+                '#f7a8c8', '#d968a8', '#fff0f7', '#ff99bb'
+            ];
+            const randomColor = colorPool[Math.floor(Math.random() * colorPool.length)];
+            const darkColor = '#cc2277';
+
+            // 根据类型生成不同图形样式
+            let styleStr = '';
+            switch(type) {
+                case 'dress':
+                    styleStr = `background: radial-gradient(circle, ${randomColor} 40%, ${darkColor} 100%);clip-path: polygon(20% 25%, 80% 25%, 95% 98%, 5% 98%);`;
+                    break;
+                case 'top':
+                    styleStr = `background: ${randomColor};clip-path: polygon(15% 20%, 85% 20%, 90% 60%, 10% 60%);`;
+                    break;
+                case 'pants':
+                    styleStr = `background: ${randomColor};clip-path: polygon(25% 50%, 75% 50%, 90% 98%, 10% 98%);`;
+                    break;
+                case 'hat':
+                    styleStr = `background: ${randomColor};clip-path: ellipse(50% 30% at 50% 20%);`;
+                    break;
+                case 'jewelry':
+                    styleStr = `background: radial-gradient(circle, #fff8cc 10%, transparent 30%), ${randomColor};`;
+                    break;
+                case 'bag':
+                    styleStr = `background: ${randomColor};clip-path: polygon(30% 40%, 70% 40%, 75% 85%, 25% 85%);`;
+                    break;
+                case 'shoe':
+                    styleStr = `background: ${randomColor};clip-path: polygon(20% 70%, 80% 70%, 85% 98%, 15% 98%);`;
+                    break;
+            }
+            return {
+                name: desc,
+                type: type,
+                css: styleStr
+            }
+        }
+
+        // 渲染单品列表
+        function renderClothList() {
+            clothBox.innerHTML = '';
+            clothList.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'cloth-item';
+                div.innerText = item.name.slice(0,6);
+                div.title = item.name;
+                // 点击穿戴
+                div.onclick = () => wearCloth(item);
+                clothBox.appendChild(div);
+            })
+        }
+
+        // 穿戴到芭比身上
+        function wearCloth(item) {
+            if(['dress','top','pants','shoe'].includes(item.type)) {
+                clothLayer.style.cssText = item.css;
+            } else {
+                accLayer.style.cssText = item.css;
+            }
+        }
+
+        // 生成按钮点击
+        genBtn.onclick = () => {
+            const desc = descInput.value.trim();
+            const type = typeSelect.value;
+            if(!desc) {
+                alert('请输入服装或配饰描述！');
+                return;
+            }
+            const newCloth = generateClothStyle(desc, type);
+            clothList.push(newCloth);
+            renderClothList();
+            descInput.value = '';
+        }
+
+        // 重置清空
+        resetBtn.onclick = () => {
+            clothList = [];
+            clothBox.innerHTML = '';
+            clothLayer.style.cssText = '';
+            accLayer.style.cssText = '';
+            descInput.value = '';
+        }
+    </script>
+</body>
+</html>
